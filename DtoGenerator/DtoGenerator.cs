@@ -11,31 +11,20 @@ namespace DtoGenerator
 {
     public class DtoGenerator: IDtoGenerator
     {
-        private static volatile DtoGenerator _instance;
-        private static readonly object _syncRoot = new object();
+        private readonly DtoGeneratorConfig _dtoGeneratorConfig = new DtoGeneratorConfig();
         private static readonly RandomGenerator _randomGenerator = RandomGenerator.GetInstance();
-        private readonly ValueTypes _valueTypes = new ValueTypes();
+        private readonly SupportedTypes _supportedTypes = new SupportedTypes();
         private readonly List<Type> _objectTypesToCreate;
 
-        private DtoGenerator()
+        public DtoGenerator()
         {
             _objectTypesToCreate = new List<Type>();
         }
 
-        public static DtoGenerator GetInstance()
+        public DtoGenerator(DtoGeneratorConfig config)
         {
-            if (_instance == null)
-            {
-                lock (_syncRoot)
-                {
-                    if (_instance == null)
-                    {
-                        _instance = new DtoGenerator();
-                    }
-                }
-            }
-
-            return _instance;
+            _objectTypesToCreate = new List<Type>();
+            _dtoGeneratorConfig = config;
         }
 
         public T Create<T>()
@@ -43,24 +32,31 @@ namespace DtoGenerator
             Type objectType = typeof(T);
             object dto = null;
 
-            if (_valueTypes.Has(objectType))
+            if (_supportedTypes.Has(objectType))
             {
-                dto = CreateValueTypeObject(objectType);
+                dto = CreateValueTypeObject(objectType, null);
             }
             else
             {
-                _objectTypesToCreate.Add(objectType);
-                IOrderedEnumerable<ConstructorInfo> ctors = objectType.GetConstructors().OrderByDescending(x => x.GetParameters().Length);
-
-                if (ctors.Count() > 0 && ctors.First().GetParameters().Length > 0)
+                if (!objectType.IsAbstract && !objectType.IsInterface && !objectType.IsValueType)
                 {
-                    dto = CreateObjectViaConstructor(ctors.First());
+                    _objectTypesToCreate.Add(objectType);
+                    IOrderedEnumerable<ConstructorInfo> ctors = objectType.GetConstructors().OrderByDescending(x => x.GetParameters().Length);
+
+                    if (ctors.Count() > 0 && ctors.First().GetParameters().Length > 0)
+                    {
+                        dto = CreateObjectViaConstructor(objectType, ctors.First());
+                    }
+                    else
+                    {
+                        dto = System.Activator.CreateInstance(objectType);
+                        InitializeObjectProperties(dto);
+                        InitializeObjectFields(dto);
+                    }
                 }
                 else
                 {
-                    dto = System.Activator.CreateInstance(objectType);
-                    InitializeObjectProperties(dto);
-                    InitializeObjectFields(dto);
+                    return default(T);
                 }
             }
 
@@ -69,9 +65,9 @@ namespace DtoGenerator
             return (T)dto;
         }
 
-        private object CreateObjectViaConstructor(ConstructorInfo ctor)
+        private object CreateObjectViaConstructor(Type dtoType, ConstructorInfo ctor)
         {
-            object[] constructorArgs = GetConstructorArguments(ctor);
+            object[] constructorArgs = GetConstructorArguments(dtoType, ctor);
             
             return ctor.Invoke(constructorArgs);
         }
@@ -82,7 +78,7 @@ namespace DtoGenerator
             {
                 if (property.SetMethod.IsPublic)
                 {
-                    property.SetValue(dto, GetObject(property.PropertyType));
+                    property.SetValue(dto, GetObject(dto.GetType(), property.PropertyType, property.Name));
                 }
             }
         }
@@ -93,39 +89,40 @@ namespace DtoGenerator
             {
                 if (field.IsPublic)
                 {
-                    field.SetValue(dto, GetObject(field.FieldType));
+                    field.SetValue(dto, GetObject(dto.GetType(), field.FieldType, field.Name));
                 }
             }
         }
 
-        public object[] GetConstructorArguments(ConstructorInfo ctor)
+        public object[] GetConstructorArguments(Type dtoType, ConstructorInfo ctor)
         { 
             object[] args = new object[ctor.GetParameters().Length];
 
             for (int i = 0; i < ctor.GetParameters().Length; ++i)
             {
                 ParameterInfo parameter = ctor.GetParameters()[i];
-                args[i] = GetObject(parameter.ParameterType);                               
+                args[i] = GetObject(dtoType, parameter.ParameterType, parameter.Name);                               
             }
 
             return args;
         }
 
-        private object GetObject(Type type)
+        private object GetObject(Type dtoType, Type objectType, string name)
         {
             //TODO: rename the function (something like GetObjectToInitialize)
             object obj = new object();
 
-            if (_valueTypes.Has(type))
+            if (_supportedTypes.Has(objectType))
             {
-                obj = CreateValueTypeObject(type);
+                Type generatorType;
+                _dtoGeneratorConfig.Has(dtoType, name, out generatorType);
+                obj = CreateValueTypeObject(objectType, generatorType);
             }
             else
             {
-                //Add handler which can handle undefined types.......
-                if (!_objectTypesToCreate.Contains(type))
+                if (!_objectTypesToCreate.Contains(objectType))
                 {
-                    obj = CreateDtoTypeObject(type);
+                    obj = CreateDtoTypeObject(objectType);
                 }
                 else
                 {
@@ -136,13 +133,13 @@ namespace DtoGenerator
             return obj;
         }
 
-        private object CreateValueTypeObject(Type type)
+        private object CreateValueTypeObject(Type objectType, Type generatorType)
         {
             Type openType = typeof(RandomGenerator);
             MethodInfo method = openType.GetMethod("Generate");
-            MethodInfo genericMethod = method.MakeGenericMethod(new Type[] { type });
+            MethodInfo genericMethod = method.MakeGenericMethod(new Type[] { objectType });
 
-            return genericMethod.Invoke(_randomGenerator, null);
+            return genericMethod.Invoke(_randomGenerator, new object[] { generatorType });
         }
 
         private object CreateDtoTypeObject(Type type)
