@@ -10,6 +10,6 @@ namespace DtoGenerator
     public interface IDtoGenerator
     {
         T Create<T>();
-        object[] GetConstructorArguments(ConstructorInfo ctor);
+        object[] GetConstructorArguments(Type dtoType, ConstructorInfo ctor);
     }
 }
