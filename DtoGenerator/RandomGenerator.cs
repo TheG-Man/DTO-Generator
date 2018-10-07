@@ -72,7 +72,7 @@ namespace DtoGenerator
 
         private void LoadExternalRandomGenerators()
         {
-            foreach (string file in Directory.EnumerateFiles("C:\\Users\\nikol\\iCloudDrive\\Programming\\C#\\Projects\\MPP\\DTO-Generator\\Plugins"))
+            foreach (string file in Directory.EnumerateFiles(Directory.GetCurrentDirectory()))
             {
                 try
                 {
