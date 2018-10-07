@@ -78,7 +78,7 @@ namespace DtoGenerator
             {
                 if (property.SetMethod.IsPublic)
                 {
-                    property.SetValue(dto, GetObject(dto.GetType(), property.PropertyType, property.Name));
+                    property.SetValue(dto, GetInitializedObject(dto.GetType(), property.PropertyType, property.Name));
                 }
             }
         }
@@ -89,7 +89,7 @@ namespace DtoGenerator
             {
                 if (field.IsPublic)
                 {
-                    field.SetValue(dto, GetObject(dto.GetType(), field.FieldType, field.Name));
+                    field.SetValue(dto, GetInitializedObject(dto.GetType(), field.FieldType, field.Name));
                 }
             }
         }
@@ -101,15 +101,14 @@ namespace DtoGenerator
             for (int i = 0; i < ctor.GetParameters().Length; ++i)
             {
                 ParameterInfo parameter = ctor.GetParameters()[i];
-                args[i] = GetObject(dtoType, parameter.ParameterType, parameter.Name);                               
+                args[i] = GetInitializedObject(dtoType, parameter.ParameterType, parameter.Name);                               
             }
 
             return args;
         }
 
-        private object GetObject(Type dtoType, Type objectType, string name)
+        private object GetInitializedObject(Type dtoType, Type objectType, string name)
         {
-            //TODO: rename the function (something like GetObjectToInitialize)
             object obj = new object();
 
             if (_supportedTypes.Has(objectType))
