@@ -72,7 +72,7 @@ namespace DtoGenerator
             return ctor.Invoke(constructorArgs);
         }
 
-        public void InitializeObjectProperties(object dto)
+        private void InitializeObjectProperties(object dto)
         {
             foreach (PropertyInfo property in dto.GetType().GetProperties())
             {
@@ -83,7 +83,7 @@ namespace DtoGenerator
             }
         }
 
-        public void InitializeObjectFields(object dto)
+        private void InitializeObjectFields(object dto)
         {
             foreach (FieldInfo field in dto.GetType().GetFields())
             {
@@ -94,7 +94,7 @@ namespace DtoGenerator
             }
         }
 
-        public object[] GetConstructorArguments(Type dtoType, ConstructorInfo ctor)
+        private object[] GetConstructorArguments(Type dtoType, ConstructorInfo ctor)
         { 
             object[] args = new object[ctor.GetParameters().Length];
 
