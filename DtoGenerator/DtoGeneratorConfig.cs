@@ -27,9 +27,13 @@ namespace DtoGenerator
             ConfigDescription configDescription = _configDescriptions.Find(x => x.ObjectType == objectType && x.PropertyName.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
 
             if (configDescription != null)
+            {
                 generator = configDescription.RandomValueGeneratorType;
+            }
             else
+            {
                 generator = null;
+            }
 
             return configDescription == null ? false : true;
         }
