@@ -9,6 +9,7 @@ namespace DtoGenerator
     public interface IRandomValueGenerator
     {
         string Type { get; }
-        object Generate();
+
+        object Generate<T>();
     }
 }
