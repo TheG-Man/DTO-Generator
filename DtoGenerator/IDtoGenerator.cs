@@ -9,6 +9,14 @@ namespace DtoGenerator
 {
     public interface IDtoGenerator
     {
-        T Create<T>();
+        object Create(Type type);
     }
+
+    public static class DtoGeneratorExtentions
+    {
+        public static T Create<T>(this IDtoGenerator dtoGenerator)
+        {
+            return (T)dtoGenerator.Create(typeof(T));
+        }
+    } 
 }
