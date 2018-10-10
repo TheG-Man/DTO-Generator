@@ -28,9 +28,8 @@ namespace DtoGenerator
             _dtoGeneratorConfig = config;
         }
 
-        public T Create<T>()
+        public object Create(Type objectType)
         {
-            Type objectType = typeof(T);
             object dto = null;
 
             if (_supportedTypes.Has(objectType))
@@ -57,13 +56,13 @@ namespace DtoGenerator
                 }
                 else
                 {
-                    return default(T);
+                    return null;
                 }
             }
 
             _objectTypesToCreate.Remove(objectType);
 
-            return (T)dto;
+            return dto;
         }
 
         private object CreateObjectViaConstructor(Type dtoType, ConstructorInfo ctor)
@@ -122,7 +121,7 @@ namespace DtoGenerator
             {
                 if (!_objectTypesToCreate.Contains(objectType))
                 {
-                    obj = CreateDtoTypeObject(objectType);
+                    obj = Create(objectType);
                 }
                 else
                 {
@@ -140,15 +139,6 @@ namespace DtoGenerator
             MethodInfo genericMethod = method.MakeGenericMethod(new Type[] { objectType });
 
             return genericMethod.Invoke(_randomGenerator, new object[] { generatorType });
-        }
-
-        private object CreateDtoTypeObject(Type type)
-        {
-            Type openType = typeof(DtoGenerator);
-            MethodInfo method = openType.GetMethod("Create");
-            MethodInfo genericMethod = method.MakeGenericMethod(new Type[] { type });
-
-            return genericMethod.Invoke(this, null);
         }
     }
 }
