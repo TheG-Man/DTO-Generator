@@ -11,13 +11,14 @@ namespace DtoGenerator
 {
     public class DtoGenerator: IDtoGenerator
     {
-        private readonly DtoGeneratorConfig _dtoGeneratorConfig = new DtoGeneratorConfig();
+        private readonly DtoGeneratorConfig _dtoGeneratorConfig;
         private static readonly RandomGenerator _randomGenerator = RandomGenerator.GetInstance();
         private readonly SupportedTypes _supportedTypes = new SupportedTypes();
         private readonly List<Type> _objectTypesToCreate;
 
         public DtoGenerator()
         {
+            _dtoGeneratorConfig = new DtoGeneratorConfig();
             _objectTypesToCreate = new List<Type>();
         }
 
