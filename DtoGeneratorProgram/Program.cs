@@ -91,10 +91,6 @@ namespace DtoGeneratorProgram
         {
             try
             {
-                //var obj = _dtoGenerator.Create<ObjWithoutCtor>();
-
-                //foreach (var i in obj.Prices)
-                  //  Console.WriteLine(i);
                 DtoGeneratorCreateTest();
             }
             catch (PluginLoadException e)
