@@ -49,9 +49,16 @@ namespace DtoGenerator
                     }
                     else
                     {
-                        dto = System.Activator.CreateInstance(objectType);
-                        InitializeObjectProperties(dto);
-                        InitializeObjectFields(dto);
+                        if (ctors.Count() > 0)
+                        {
+                            dto = System.Activator.CreateInstance(objectType);
+                            InitializeObjectProperties(dto);
+                            InitializeObjectFields(dto);
+                        }
+                        else
+                        {
+                            return null;
+                        }
                     }
                 }
                 else
