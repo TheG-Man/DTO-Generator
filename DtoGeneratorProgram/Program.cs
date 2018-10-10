@@ -10,44 +10,54 @@ namespace DtoGeneratorProgram
 {
     public class Vehicle
     {
+        private readonly string _owner;
+        private readonly int _doors;
+
         public int Price { get; set; }
-        public int Age { get; set; }
-        public Shoes Boots { get; set; }
+        public int Age { get; }
+        public VehiclePart Engine { get; set; }
 
         public Vehicle(int price)
         {
             Price = price;
         }
 
-        public Vehicle(int price, int age, Shoes boots)
+        public Vehicle(int price, int age, string owner, int doors, VehiclePart engine)
         {
             Price = price;
             Age = age;
-            Boots = boots;
+            Engine = engine;
+
+            _owner = owner;
+            _doors = doors;
         }
     }
 
-    public class Shoes
+    public class VehiclePart
     {
+        private readonly string _color;
+
         public int Price { get; set; }
         public string Name { get; set; }
-        public double Size { get; set; }
+        public double Volume { get; set; }
         public Vehicle Car { get; set; }
 
-        public Shoes(int price)
+        public VehiclePart(int price)
         {
             Price = price;
         }
 
-        public Shoes(int price, string name, double size, Vehicle car)
+        public VehiclePart(int price, string name, double volume, string color, Vehicle car)
         {
             Price = price;
             Name = name;
-            Size = size;
+            Volume = volume;
             Car = car;
+
+            _color = color;
         }
 
-        public Shoes(int price, string name)
+        public VehiclePart(int price, string name)
         {
             Price = price;
             Name = name;
@@ -56,11 +66,13 @@ namespace DtoGeneratorProgram
 
     public class Mix
     {
-        public Vehicle Car { get; set; }
+        private readonly VehiclePart _vehiclePart;
+        public Vehicle Car { get; set; } 
 
-        public Mix(Vehicle car)
+        public Mix(Vehicle car, VehiclePart vehiclePart)
         {
             Car = car;
+            _vehiclePart = vehiclePart;
         }
     }
 
@@ -103,36 +115,69 @@ namespace DtoGeneratorProgram
         public static void DtoGeneratorCreateTest()
         {
             var dtoGeneratorConfig = new DtoGeneratorConfig();
-            dtoGeneratorConfig.Add<Vehicle, int, AgeGenerator>( car => car.Age );
+            dtoGeneratorConfig.Add<Vehicle, int, AgeGenerator>(car => car.Age);
+            dtoGeneratorConfig.Add<Vehicle, int, AgeGenerator>(car => car.Price);
+            dtoGeneratorConfig.Add<VehiclePart, int, AgeGenerator>(vp => vp.Price);
+
             var dtoGenerator = new DtoGenerator.DtoGenerator(dtoGeneratorConfig);
 
-            var myObject = dtoGenerator.Create<Vehicle>();
+            var myObject = dtoGenerator.Create<Mix>();
 
-            if (myObject != null)
+            Console.WriteLine("{0}: [{1}]", myObject.GetType().Name, myObject);
+            PrintObjectInfo(myObject, 1);
+        }
+
+        private static void PrintObjectInfo(object obj, int level)
+        {
+            if (obj != null)
             {
-                Console.WriteLine("{0}: [{1}]", myObject.GetType().Name, myObject);
-                PrintProperties(myObject);
+                PrintFields(obj, level);
+                PrintProperties(obj, level);
             }
         }
 
-        private static void PrintProperties(object myObject)
-        { 
-            Console.WriteLine("Properties:");
-
+        private static void PrintProperties(object myObject, int level)
+        {
             foreach (PropertyInfo property in myObject.GetType().GetProperties())
             {
                 try
                 {
                     if (property.CanRead && property.GetGetMethod().GetParameters().Length == 0)
-                        Console.WriteLine("\t{0}: {1}", property.Name, property.GetValue(myObject));
-                
+                    {
+                        object propertyValue = property.GetValue(myObject);
+                        Console.WriteLine(new string(' ', level * 3) + "[Property] {0} {1}: {2}", property.PropertyType.Name, property.Name, propertyValue == null ? "null" : propertyValue);
+                    }
+
                     if (!_valueTypes.Has(property.PropertyType))
                         if (property.GetValue(myObject) != null && property.GetValue(myObject).GetType() != myObject.GetType())
-                            PrintProperties(property.GetValue(myObject));
-                    }
+                            PrintObjectInfo(property.GetValue(myObject), ++level);
+                }
                 catch (Exception)
                 {
 
+                }
+            }
+        }
+
+        private static void PrintFields(object myObject, int level)
+        {
+            foreach (FieldInfo field in myObject.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            {
+                try
+                {
+                    if (field.IsInitOnly)
+                    {
+                        object fieldValue = field.GetValue(myObject);
+                        Console.WriteLine(new string(' ', level * 3) + "[Field] {0} {1}: {2}", field.FieldType.Name, field.Name, fieldValue == null ? "null" : fieldValue);
+
+                        if (!_valueTypes.Has(field.FieldType))
+                            if (field.GetValue(myObject) != null && field.GetValue(myObject).GetType() != myObject.GetType())
+                                PrintObjectInfo(field.GetValue(myObject), ++level);
+                    }
+                }
+                catch (Exception)
+                {
+                    
                 }
             }
         }
