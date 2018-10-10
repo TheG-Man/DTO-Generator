@@ -11,71 +11,69 @@ namespace DtoGeneratorTests
 {
     public class Vehicle
     {
+        private readonly string _owner;
+        private readonly int _doors;
+
         public int Price { get; set; }
         public int Age { get; set; }
+        public VehiclePart Engine { get; set; }
 
         public Vehicle(int price)
         {
             Price = price;
         }
 
-        public Vehicle(int price, int age)
+        public Vehicle(int price, int age, string owner, int doors, VehiclePart engine)
         {
             Price = price;
             Age = age;
+            Engine = engine;
+
+            _owner = owner;
+            _doors = doors;
         }
     }
 
-    public class Shoes
+    public class VehiclePart
     {
+        private readonly string _color;
+
         public int Price { get; set; }
         public string Name { get; set; }
-        public double Size { get; set; }
-        public Trainers Sneakers { get; set; }
+        public double Volume { get; set; }
+        public Vehicle Car { get; set; }
 
-        public Shoes(int price)
+        public VehiclePart(int price)
         {
             Price = price;
         }
 
-        public Shoes(int price, string name, double size, Trainers sneakers)
+        public VehiclePart(int price, string name, double volume, string color, Vehicle car)
         {
             Price = price;
             Name = name;
-            Size = size;
-            Sneakers = sneakers;
+            Volume = volume;
+            Car = car;
+
+            _color = color;
         }
 
-        public Shoes(int price, string name)
+        public VehiclePart(int price, string name)
         {
             Price = price;
             Name = name;
-        }
-    }
-
-    public class Trainers
-    {
-        public int Price { get; set; }
-        public string Name { get; set; }
-        public double Size { get; set; }
-        public Shoes Boots { get; set; }
-
-        public Trainers(int price, string name, double size, Shoes boots)
-        {
-            Price = price;
-            Name = name;
-            Size = size;
-            Boots = boots;
         }
     }
 
     public class Mix
     {
+        private readonly VehiclePart _vehiclePart;
         public Vehicle Car { get; set; }
 
-        public Mix(Vehicle car)
+        public Mix(Vehicle car, VehiclePart vehiclePart)
         {
             Car = car;
+            _vehiclePart = vehiclePart;
         }
     }
 
@@ -94,24 +92,12 @@ namespace DtoGeneratorTests
         }
 
         [Test]
-        public void GetConstructorArgumentsTest()
+        public void DtoGeneratorCreateObjViaCtorTest()
         {
             var dtoGenerator = new DtoGenerator.DtoGenerator();
-            Type t = typeof(Vehicle);
+            Vehicle vehicle = dtoGenerator.Create<Vehicle>();
 
-            object[] args = dtoGenerator.GetConstructorArguments(t, t.GetConstructors()[0]);
-
-            Assert.AreEqual(1, args.Length);
-            Assert.AreEqual(typeof(int), args[0].GetType());
-        }
-
-        [Test]
-        public void DtoGeneratorCreateTest()
-        {
-            var dtoGenerator = new DtoGenerator.DtoGenerator();
-            Shoes myObject = dtoGenerator.Create<Shoes>();
-
-            Assert.AreEqual(typeof(Shoes), myObject.GetType());
+            Assert.AreEqual(typeof(Vehicle), vehicle.GetType());
         }
 
         [Test]
@@ -122,15 +108,16 @@ namespace DtoGeneratorTests
 
             Assert.AreEqual(typeof(Mix), mix.GetType());
             Assert.AreEqual(typeof(Vehicle), mix.Car.GetType());
+            Assert.AreEqual(typeof(VehiclePart), mix.Car.Engine.GetType());
         }
 
         [Test]
         public void DtoGeneratorCreateRecursionTest()
         {
             var dtoGenerator = new DtoGenerator.DtoGenerator();
-            Shoes shoes = dtoGenerator.Create<Shoes>();
+            Vehicle vehicle = dtoGenerator.Create<Vehicle>();
 
-            Assert.AreEqual(null, shoes.Sneakers.Boots);
+            Assert.AreEqual(null, vehicle.Engine.Car);
         }
 
         [Test]
@@ -147,6 +134,7 @@ namespace DtoGeneratorTests
         {
             var dtoGeneratorConfig = new DtoGeneratorConfig();
             dtoGeneratorConfig.Add<Vehicle, int, AgeGenerator>(car => car.Age);
+
             var dtoGenerator = new DtoGenerator.DtoGenerator(dtoGeneratorConfig);
 
             var vehicle = dtoGenerator.Create<Vehicle>();
