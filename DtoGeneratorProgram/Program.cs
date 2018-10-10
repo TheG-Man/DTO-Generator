@@ -117,10 +117,13 @@ namespace DtoGeneratorProgram
 
             var dtoGenerator = new DtoGenerator.DtoGenerator(dtoGeneratorConfig);
 
-            var myObject = dtoGenerator.Create<Mix>();
+            var myObject = dtoGenerator.Create<ObjWithoutCtor>();
 
-            Console.WriteLine("{0}: [{1}]", myObject.GetType().Name, myObject);
-            PrintObjectInfo(myObject, 1);
+            if (myObject != null)
+            {
+                Console.WriteLine("{0}: [{1}]", myObject.GetType().Name, myObject);
+                PrintObjectInfo(myObject, 1);
+            }
         }
 
         private static void PrintObjectInfo(object obj, int level)
